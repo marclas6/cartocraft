@@ -72,7 +72,7 @@
         }
         #combo-badge.active { opacity: 1; transform: scale(1); }
 
-        /* Jauge de score glossy & dopaminergique (Droite) */
+        /* Jauge de score glossy & dopaminergique (Droite) qui monte */
         .glossy-gauge-container {
             position: absolute; top: 20px; right: 20px; width: 24px; height: 200px;
             background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.2);
@@ -84,7 +84,7 @@
             width: 100%; height: 0%; background: linear-gradient(180deg, #10B981, #FACC15, #EF4444);
             border-radius: 8px; transition: height 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: inset 0 2px 5px rgba(255,255,255,0.5), 0 0 15px rgba(250, 204, 21, 0.6);
-            position: relative;
+            position: relative; margin-top: auto; /* Aligne le remplissage par le bas */
         }
         .glossy-gauge-fill::after {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
@@ -165,7 +165,6 @@
         </div>
     </div>
 
-    <!-- Encart Astuce -->
     <div class="astuce-panel" id="astuce-panel" style="display: none;">
         Astuce :
     </div>
@@ -185,9 +184,8 @@
         </div>
     </div>
 
-    <!-- Jauge Glossy Dopaminergique Droite -->
     <div class="glossy-gauge-container" id="glossy-gauge">
-        <div class="glossy-gauge-fill" id="glossy-gauge-fill"></div>
+        <div class="glossy-gauge-fill" id="glossy-gauge-fill" style="height: 0%;"></div>
     </div>
 
     <div class="glass-panel" id="hint-notification">Indice activé !</div>
@@ -464,6 +462,7 @@
             document.getElementById('menu-buttons').style.display = "flex";
         });
 
+        // --- CORRECTION INFAILLIBLE DU CLIC & DRAG ---
         const mapDiv = document.getElementById('map-container');
 
         function startStroke(clientX, clientY) {
@@ -471,6 +470,10 @@
             initAudio();
             isDrawing = true;
             playSfxClick();
+            
+            // Désactive immédiatement le déplacement de la carte par Leaflet pour tracer sans riper
+            map.dragging.disable();
+
             const latlng = map.containerPointToLatLng([clientX, clientY]);
             currentPath = [latlng];
             currentPolyline = L.polyline(currentPath, { color: '#FACC15', weight: 4 }).addTo(drawnLayers);
@@ -484,17 +487,25 @@
         }
 
         function endStroke() {
-            if (!gameActive || !isDrawing) return;
+            if (!isDrawing) return;
             isDrawing = false;
             playSfxRelease();
-            if (currentPath.length > 1) { userPaths.push([...currentPath]); } 
-            else if (currentPolyline) { drawnLayers.removeLayer(currentPolyline); }
-            currentPath = []; currentPolyline = null;
+            
+            // Réactive le déplacement de la carte dès qu'on lâche la souris ou le doigt
+            map.dragging.enable();
+
+            if (currentPath.length > 1) { 
+                userPaths.push([...currentPath]); 
+            } else if (currentPolyline) { 
+                drawnLayers.removeLayer(currentPolyline); 
+            }
+            currentPath = []; 
+            currentPolyline = null;
         }
 
-        // Gestion Souris propre (Pas de blocage permanent du drag)
+        // Événements Souris PC (Clic gauche = Dessin pur sans bouger la carte)
         mapDiv.addEventListener('mousedown', (e) => {
-            if (e.button === 0 && !e.shiftKey) {
+            if (e.button === 0) {
                 startStroke(e.clientX, e.clientY);
             }
         });
@@ -503,13 +514,14 @@
         });
         window.addEventListener('mouseup', endStroke);
 
-        // Tactile mobile (1 doigt dessine, 2 doigts bougent la carte)
+        // Tactile mobile (1 doigt = dessin, 2 doigts = bouger/zoomer la carte)
         mapDiv.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
                 startStroke(touch.clientX, touch.clientY);
             } else if (e.touches.length >= 2) {
                 isDrawing = false;
+                map.dragging.enable();
                 if (currentPolyline) { drawnLayers.removeLayer(currentPolyline); }
                 currentPath = []; currentPolyline = null;
             }
@@ -631,7 +643,7 @@
             document.getElementById('score-val').innerText = "0";
             document.getElementById('timer-container').style.display = mode === 'zen' ? 'none' : 'flex';
             document.getElementById('glossy-gauge').style.display = 'block';
-            updateGlossyGauge(20); // Manche 1 commence à 20%
+            updateGlossyGauge(20); // Manche 1 = 20%
             startRound();
         }
 
@@ -754,7 +766,7 @@
             playSfxScore();
 
             document.getElementById('score-val').innerText = totalScore.toLocaleString();
-            updateGlossyGauge((round / 5) * 100); // La jauge monte vers le haut à chaque manche
+            updateGlossyGauge((round / 5) * 100); // La jauge s'élève vers le haut à chaque manche
 
             targetLayer = L.geoJSON(currentLandBorders, { style: { color: '#10B981', weight: 5, dashArray: '8, 10' } }).addTo(map);
 

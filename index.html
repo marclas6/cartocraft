@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CartoCraft - Mobile Ready</title>
+    <title>CartoCraft - Ultimate Edition</title>
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -42,8 +42,18 @@
         .timer-bar-bg { width: 100px; height: 10px; background: rgba(255,255,255,0.1); border-radius: 5px; overflow: hidden; }
         .timer-bar-fill { height: 100%; width: 100%; background: var(--success); border-radius: 5px; transition: width 1s linear, background-color 0.3s; }
 
+        /* Encart Astuce */
+        .astuce-panel {
+            position: absolute; top: 100px; left: 50%; transform: translateX(-50%);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(16, 185, 129, 0.2));
+            border: 1px solid rgba(59, 130, 246, 0.4); padding: 5px 15px; border-radius: 10px;
+            font-size: 0.8rem; color: #93c5fd; font-weight: 600; z-index: 10; text-align: center; max-width: 400px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); backdrop-filter: blur(8px);
+        }
+
+        /* Panneau d'aides */
         .hints-panel { 
-            position: absolute; top: 100px; left: 50%; transform: translateX(-50%); 
+            position: absolute; top: 145px; left: 50%; transform: translateX(-50%); 
             display: flex; gap: 8px; z-index: 10; background: rgba(15, 23, 42, 0.95);
             padding: 6px 12px; border-radius: 12px; border: 1px solid rgba(250, 204, 21, 0.3);
         }
@@ -63,7 +73,27 @@
         }
         #combo-badge.active { opacity: 1; transform: scale(1); }
 
-        #hint-notification { position: absolute; top: 160px; left: 50%; transform: translateX(-50%); padding: 6px 15px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 20;}
+        /* Jauge de score glossy & dopaminergique (Droite) */
+        .glossy-gauge-container {
+            position: absolute; top: 20px; right: 20px; width: 24px; height: 200px;
+            background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px; overflow: hidden; z-index: 10; display: none;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 0 10px rgba(0,0,0,0.8);
+            padding: 3px; box-sizing: border-box;
+        }
+        .glossy-gauge-fill {
+            width: 100%; height: 0%; background: linear-gradient(180deg, #10B981, #FACC15, #EF4444);
+            border-radius: 8px; transition: height 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            box-shadow: inset 0 2px 5px rgba(255,255,255,0.5), 0 0 15px rgba(250, 204, 21, 0.6);
+            position: relative;
+        }
+        .glossy-gauge-fill::after {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
+            background: linear-gradient(180deg, rgba(255,255,255,0.4), transparent);
+            border-radius: 8px 8px 0 0; pointer-events: none;
+        }
+
+        #hint-notification { position: absolute; top: 200px; left: 50%; transform: translateX(-50%); padding: 6px 15px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 20;}
 
         .bottom-actions { position: absolute; bottom: 25px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; z-index: 10; width: 90%; max-width: 500px; justify-content: center; }
         .btn {
@@ -110,8 +140,10 @@
             .score-value { font-size: 1.1rem; }
             .top-bar { top: 75px; left: 10px; transform: none; width: auto; max-width: 95vw; padding: 8px 15px; justify-content: space-between; }
             .target-country { font-size: 1.2rem; }
-            .hints-panel { top: 135px; left: 10px; transform: none; padding: 5px 10px; gap: 5px; }
+            .astuce-panel { top: 132px; left: 10px; transform: none; font-size: 0.7rem; padding: 4px 10px; }
+            .hints-panel { top: 172px; left: 10px; transform: none; padding: 5px 10px; gap: 5px; }
             .hint-btn { padding: 4px 8px; font-size: 0.65rem; }
+            .glossy-gauge-container { top: 10px; right: 10px; height: 150px; width: 18px; }
             .bottom-actions { bottom: 15px; width: 95%; gap: 6px; }
             .btn { padding: 10px 10px; font-size: 0.8rem; }
             .overlay-title { font-size: 2.5rem; }
@@ -134,6 +166,11 @@
         </div>
     </div>
 
+    <!-- Encart Astuce -->
+    <div class="astuce-panel" id="astuce-panel" style="display: none;">
+        💡 <span id="astuce-text">Astuce : Cherche les pays limitrophes pour valider ton tracé.</span>
+    </div>
+
     <div class="hints-panel" id="hints-panel" style="display: none;">
         <button class="hint-btn" id="hint-1" onclick="triggerHint(1)">💡 Centre</button>
         <button class="hint-btn" id="hint-2" onclick="triggerHint(2)">💡 Voisins</button>
@@ -147,6 +184,11 @@
             <span class="score-value" id="score-val">0</span>
             <div id="combo-badge">🔥 x1.0</div>
         </div>
+    </div>
+
+    <!-- Jauge Glossy Dopaminergique Droite -->
+    <div class="glossy-gauge-container" id="glossy-gauge">
+        <div class="glossy-gauge-fill" id="glossy-gauge-fill"></div>
     </div>
 
     <div class="glass-panel" id="hint-notification">Indice activé !</div>
@@ -242,42 +284,42 @@
 
     <script>
         const countryDataMap = {
-            "France": { 'fr': ["France", "🇫🇷"], 'en': ["France", "🇫🇷"], 'es': ["Francia", "🇫🇷"], 'de': ["Frankreich", "🇫🇷"], 'it': ["Francia", "🇫🇷"], diff: 1 },
-            "Germany": { 'fr': ["Allemagne", "🇩🇪"], 'en': ["Germany", "🇩🇪"], 'es': ["Alemania", "🇩🇪"], 'de': ["Deutschland", "🇩🇪"], 'it': ["Germania", "🇩🇪"], diff: 1 },
-            "Spain": { 'fr': ["Espagne", "🇪🇸"], 'en': ["Spain", "🇪🇸"], 'es': ["España", "🇪🇸"], 'de': ["Spanien", "🇪🇸"], 'it': ["Spagna", "🇪🇸"], diff: 1 },
-            "Italy": { 'fr': ["Italie", "🇮🇹"], 'en': ["Italy", "🇮🇹"], 'es': ["Italia", "🇮🇹"], 'de': ["Italien", "🇮🇹"], 'it': ["Italia", "🇮🇹"], diff: 1 },
-            "United Kingdom": { 'fr': ["Royaume-Uni", "🇬🇧"], 'en': ["United Kingdom", "🇬🇧"], 'es': ["Reino Unido", "🇬🇧"], 'de': ["Vereinigtes Königreich", "🇬🇧"], 'it': ["Regno Unito", "🇬🇧"], diff: 1 },
-            "Poland": { 'fr': ["Pologne", "🇵🇱"], 'en': ["Poland", "🇵🇱"], 'es': ["Polonia", "🇵🇱"], 'de': ["Polen", "🇵🇱"], 'it': ["Polonia", "🇵🇱"], diff: 1 },
-            "Ukraine": { 'fr': ["Ukraine", "🇺🇦"], 'en': ["Ukraine", "🇺🇦"], 'es': ["Ucrania", "🇺🇦"], 'de': ["Ukraine", "🇺🇦"], 'it': ["Ucraina", "🇺🇦"], diff: 1 },
-            "Sweden": { 'fr': ["Suède", "🇸🇪"], 'en': ["Sweden", "🇸🇪"], 'es': ["Suecia", "🇸🇪"], 'de': ["Schweden", "🇸🇪"], 'it': ["Svezia", "🇸🇪"], diff: 1 },
-            "Norway": { 'fr': ["Norvège", "🇳🇴"], 'en': ["Norway", "🇳🇴"], 'es': ["Noruega", "🇳🇴"], 'de': ["Norwegen", "🇳🇴"], 'it': ["Norvegia", "🇳🇴"], diff: 1 },
-            "Finland": { 'fr': ["Finlande", "🇫🇮"], 'en': ["Finland", "🇫🇮"], 'es': ["Finlandia", "🇫🇮"], 'de': ["Finnland", "🇫🇮"], 'it': ["Finlandia", "🇫🇮"], diff: 1 },
-            "Canada": { 'fr': ["Canada", "🇨🇦"], 'en': ["Canada", "🇨🇦"], 'es': ["Canadá", "🇨🇦"], 'de': ["Kanada", "🇨🇦"], 'it': ["Canada", "🇨🇦"], diff: 1 },
-            "United States of America": { 'fr': ["États-Unis", "🇺🇸"], 'en': ["United States", "🇺🇸"], 'es': ["Estados Unidos", "🇺🇸"], 'de': ["Vereinigte Staaten", "🇺🇸"], 'it': ["Stati Uniti", "🇺🇸"], diff: 1 },
-            "Mexico": { 'fr': ["Mexique", "🇲🇽"], 'en': ["Mexico", "🇲🇽"], 'es': ["México", "🇲🇽"], 'de': ["Mexiko", "🇲🇽"], 'it': ["Messico", "🇲🇽"], diff: 1 },
-            "Brazil": { 'fr': ["Brésil", "🇧🇷"], 'en': ["Brazil", "🇧🇷"], 'es': ["Brasil", "🇧🇷"], 'de': ["Brasilien", "🇧🇷"], 'it': ["Brasile", "🇧🇷"], diff: 1 },
-            "Argentina": { 'fr': ["Argentine", "🇦🇷"], 'en': ["Argentina", "🇦🇷"], 'es': ["Argentina", "🇦🇷"], 'de': ["Argentinien", "🇦🇷"], 'it': ["Argentina", "🇦🇷"], diff: 1 },
-            "China": { 'fr': ["Chine", "🇨🇳"], 'en': ["China", "🇨🇳"], 'es': ["China", "🇨🇳"], 'de': ["China", "🇨🇳"], 'it': ["Cina", "🇨🇳"], diff: 1 },
-            "Japan": { 'fr': ["Japon", "🇯🇵"], 'en': ["Japan", "🇯🇵"], 'es': ["Japón", "🇯🇵"], 'de': ["Japan", "🇯🇵"], 'it': ["Giappone", "🇯🇵"], diff: 1 },
-            "India": { 'fr': ["Inde", "🇮🇳"], 'en': ["India", "🇮🇳"], 'es': ["India", "🇮🇳"], 'de': ["Indien", "🇮🇳"], 'it': ["India", "🇮🇳"], diff: 1 },
-            "Australia": { 'fr': ["Australie", "🇦🇺"], 'en': ["Australia", "🇦🇺"], 'es': ["Australia", "🇦🇺"], 'de': ["Australien", "🇦🇺"], 'it': ["Australia", "🇦🇺"], diff: 1 },
-            "South Africa": { 'fr': ["Afrique du Sud", "🇿🇦"], 'en': ["South Africa", "🇿🇦"], 'es': ["Sudáfrica", "🇿🇦"], 'de': ["Südafrika", "🇿🇦"], 'it': ["Sudafrica", "🇿🇦"], diff: 1 },
+            "France": { 'fr': ["France", "🇫🇷", "Hexagone de l'Europe de l'Ouest"], 'en': ["France", "🇫🇷", "Western European hub"], 'es': ["Francia", "🇫🇷", "Europa Occidental"], 'de': ["Frankreich", "🇫🇷", "Westeuropa"], 'it': ["Francia", "🇫🇷", "Europa occidentale"], diff: 1 },
+            "Germany": { 'fr': ["Allemagne", "🇩🇪", "Au carrefour de l'Europe centrale"], 'en': ["Germany", "🇩🇪", "Central European powerhouse"], 'es': ["Alemania", "🇩🇪", "Europa Central"], 'de': ["Deutschland", "🇩🇪", "Mitteleuropa"], 'it': ["Germania", "🇩🇪", "Europa centrale"], diff: 1 },
+            "Spain": { 'fr': ["Espagne", "🇪🇸", "Péninsule Ibérique"], 'en': ["Spain", "🇪🇸", "Iberian Peninsula"], 'es': ["España", "🇪🇸", "Península Ibérica"], 'de': ["Spanien", "🇪🇸", "Iberische Halbinsel"], 'it': ["Spagna", "🇪🇸", "Penisola Iberica"], diff: 1 },
+            "Italy": { 'fr': ["Italie", "🇮🇹", "La botte en Méditerranée"], 'en': ["Italy", "🇮🇹", "The Mediterranean boot"], 'es': ["Italia", "🇮🇹", "La bota mediterránea"], 'de': ["Italien", "🇮🇹", "Der Stiefel im Mittelmeer"], 'it': ["Italia", "🇮🇹", "Lo stivale mediterraneo"], diff: 1 },
+            "United Kingdom": { 'fr': ["Royaume-Uni", "🇬🇧", "Îles britanniques"], 'en': ["United Kingdom", "🇬🇧", "British Isles"], 'es': ["Reino Unido", "🇬🇧", "Islas británicas"], 'de': ["Vereinigtes Königreich", "🇬🇧", "Britisches Königreich"], 'it': ["Regno Unito", "🇬🇧", "Isole britanniche"], diff: 1 },
+            "Poland": { 'fr': ["Pologne", "🇵🇱", "Plaine d'Europe centrale"], 'en': ["Poland", "🇵🇱", "Central European plains"], 'es': ["Polonia", "🇵🇱", "Llanura central europea"], 'de': ["Polen", "🇵🇱", "Mitteleuropäisches Tiefland"], 'it': ["Polonia", "🇵🇱", "Pianura dell'Europa centrale"], diff: 1 },
+            "Ukraine": { 'fr': ["Ukraine", "🇺🇦", "Vaste pays d'Europe de l'Est"], 'en': ["Ukraine", "🇺🇦", "Vast Eastern European nation"], 'es': ["Ucrania", "🇺🇦", "Nación de Europa del Este"], 'de': ["Ukraine", "🇺🇦", "Osteuropäischer Flächenstaat"], 'it': ["Ucraina", "🇺🇦", "Vasta nazione dell'Europa orientale"], diff: 1 },
+            "Sweden": { 'fr': ["Suède", "🇸🇪", "Péninsule scandinave"], 'en': ["Sweden", "🇸🇪", "Scandinavian peninsula"], 'es': ["Suecia", "🇸🇪", "Península escandinava"], 'de': ["Schweden", "🇸🇪", "Skandinavische Halbinsel"], 'it': ["Svezia", "🇸🇪", "Penisola scandinava"], diff: 1 },
+            "Norway": { 'fr': ["Norvège", "🇳🇴", "Fjords et côtes de l'Ouest"], 'en': ["Norway", "🇳🇴", "Fjords and western coast"], 'es': ["Noruega", "🇳🇴", "Fiordos y costa occidental"], 'de': ["Norwegen", "🇳🇴", "Fjorde und Westküste"], 'it': ["Norvegia", "🇳🇴", "Fiordi e costa occidentale"], diff: 1 },
+            "Finland": { 'fr': ["Finlande", "🇫🇮", "Pays des mille lacs"], 'en': ["Finland", "🇫🇮", "Land of a thousand lakes"], 'es': ["Finlandia", "🇫🇮", "País de los mil lagos"], 'de': ["Finnland", "🇫🇮", "Land der tausend Seen"], 'it': ["Finlandia", "🇫🇮", "Terra dei mille laghi"], diff: 1 },
+            "Canada": { 'fr': ["Canada", "🇨🇦", "Grand nord américain"], 'en': ["Canada", "🇨🇦", "Northern North America"], 'es': ["Canadá", "🇨🇦", "Norte de América del Norte"], 'de': ["Kanada", "🇨🇦", "Nördliches Nordamerika"], 'it': ["Canada", "🇨🇦", "America del Nord settentrionale"], diff: 1 },
+            "United States of America": { 'fr': ["États-Unis", "🇺🇸", "Amérique du Nord"], 'en': ["United States", "🇺🇸", "North American continent"], 'es': ["Estados Unidos", "🇺🇸", "América del Norte"], 'de': ["Vereinigte Staaten", "🇺🇸", "Nordamerika"], 'it': ["Stati Uniti", "🇺🇸", "Nord America"], diff: 1 },
+            "Mexico": { 'fr': ["Mexique", "🇲🇽", "Amérique centrale et du nord"], 'en': ["Mexico", "🇲🇽", "Southern North America"], 'es': ["México", "🇲🇽", "Sur de América del Norte"], 'de': ["Mexiko", "🇲🇽", "Südliches Nordamerika"], 'it': ["Messico", "🇲🇽", "America del Nord meridionale"], diff: 1 },
+            "Brazil": { 'fr': ["Brésil", "🇧🇷", "Géant d'Amérique du Sud"], 'en': ["Brazil", "🇧🇷", "South American giant"], 'es': ["Brasil", "🇧🇷", "Gigante sudamericano"], 'de': ["Brasilien", "🇧🇷", "Südamerikanischer Riese"], 'it': ["Brasile", "🇧🇷", "Gigante sudamericano"], diff: 1 },
+            "Argentina": { 'fr': ["Argentine", "🇦🇷", "Cône Sud"], 'en': ["Argentina", "🇦🇷", "Southern Cone"], 'es': ["Argentina", "🇦🇷", "Cono Sur"], 'de': ["Argentinien", "🇦🇷", "Südlicher Kegel"], 'it': ["Argentina", "🇦🇷", "Cono Sud"], diff: 1 },
+            "China": { 'fr': ["Chine", "🇨🇳", "Asie de l'Est"], 'en': ["China", "🇨🇳", "East Asia powerhouse"], 'es': ["China", "🇨🇳", "Asia Oriental"], 'de': ["China", "🇨🇳", "Ostasien"], 'it': ["Cina", "🇨🇳", "Asia orientale"], diff: 1 },
+            "Japan": { 'fr': ["Japon", "🇯🇵", "Archipel d'Asie de l'Est"], 'en': ["Japan", "🇯🇵", "East Asian archipelago"], 'es': ["Japón", "🇯🇵", "Archipiélago de Asia Oriental"], 'de': ["Japan", "🇯🇵", "Ostasiatischer Archipel"], 'it': ["Giappone", "🇯🇵", "Arcipelago dell'Asia orientale"], diff: 1 },
+            "India": { 'fr': ["Inde", "🇮🇳", "Sous-continent indien"], 'en': ["India", "🇮🇳", "Indian subcontinent"], 'es': ["India", "🇮🇳", "Subcontinente indio"], 'de': ["Indien", "🇮🇳", "Indischer Subkontinent"], 'it': ["India", "🇮🇳", "Subcontinente indiano"], diff: 1 },
+            "Australia": { 'fr': ["Australie", "🇦🇺", "Continent-île"], 'en': ["Australia", "🇦🇺", "Island continent"], 'es': ["Australia", "🇦🇺", "Continente isla"], 'de': ["Australien", "🇦🇺", "Inselkontinent"], 'it': ["Australia", "🇦🇺", "Continente isola"], diff: 1 },
+            "South Africa": { 'fr': ["Afrique du Sud", "🇿🇦", "Pointe sud de l'Afrique"], 'en': ["South Africa", "🇿🇦", "Southern tip of Africa"], 'es': ["Sudáfrica", "🇿🇦", "Extremo sur de África"], 'de': ["Südafrika", "🇿🇦", "Südliche Spitze Afrikas"], 'it': ["Sudafrica", "🇿🇦", "Punta meridionale dell'Africa"], diff: 1 },
             
-            "Romania": { 'fr': ["Roumanie", "🇷🇴"], 'en': ["Romania", "🇷🇴"], 'es': ["Rumania", "🇷🇴"], 'de': ["Rumänien", "🇷🇴"], 'it': ["Romania", "🇷🇴"], diff: 2 },
-            "Hungary": { 'fr': ["Hongrie", "🇭🇺"], 'en': ["Hungary", "🇭🇺"], 'es': ["Hungría", "🇭🇺"], 'de': ["Ungarn", "🇭🇺"], 'it': ["Ungheria", "🇭🇺"], diff: 2 },
-            "Austria": { 'fr': ["Autriche", "🇦🇹"], 'en': ["Austria", "🇦🇹"], 'es': ["Austria", "🇦🇹"], 'de': ["Österreich", "🇦🇹"], 'it': ["Austria", "🇦🇹"], diff: 2 },
-            "Switzerland": { 'fr': ["Suisse", "🇨🇭"], 'en': ["Switzerland", "🇨🇭"], 'es': ["Suiza", "🇨🇭"], 'de': ["Schweiz", "🇨🇭"], 'it': ["Svizzera", "🇨🇭"], diff: 2 },
-            "Czechia": { 'fr': ["Tchéquie", "🇨🇿"], 'en': ["Czechia", "🇨🇿"], 'es': ["Chequia", "🇨🇿"], 'de': ["Tschechien", "🇨🇿"], 'it': ["Repubblica Ceca", "🇨🇿"], diff: 2 },
-            "South Korea": { 'fr': ["Corée du Sud", "🇰🇷"], 'en': ["South Korea", "🇰🇷"], 'es': ["Corea del Sur", "🇰🇷"], 'de': ["Südkorea", "🇰🇷"], 'it': ["Corea del Sud", "🇰🇷"], diff: 2 },
-            "Vietnam": { 'fr': ["Vietnam", "🇻🇳"], 'en': ["Vietnam", "🇻🇳"], 'es': ["Vietnam", "🇻🇳"], 'de': ["Vietnam", "🇻🇳"], 'it': ["Vietnam", "🇻🇳"], diff: 2 },
+            "Romania": { 'fr': ["Roumanie", "🇷🇴", "Europe de l'Est / Carpates"], 'en': ["Romania", "🇷🇴", "Eastern Europe / Carpathians"], 'es': ["Rumania", "🇷🇴", "Europa del Este"], 'de': ["Rumänien", "🇷🇴", "Osteuropa"], 'it': ["Romania", "🇷🇴", "Europa orientale"], diff: 2 },
+            "Hungary": { 'fr': ["Hongrie", "🇭🇺", "Plaine pannonique"], 'en': ["Hungary", "🇭🇺", "Pannonian Basin"], 'es': ["Hungría", "🇭🇺", "Cuenca panónica"], 'de': ["Ungarn", "🇭🇺", "Pannonisches Becken"], 'it': ["Ungheria", "🇭🇺", "Bacino pannonico"], diff: 2 },
+            "Austria": { 'fr': ["Autriche", "🇦🇹", "Pays alpin d'Europe centrale"], 'en': ["Austria", "🇦🇹", "Alpine Central Europe"], 'es': ["Austria", "🇦🇹", "Europa Central alpina"], 'de': ["Österreich", "🇦🇹", "Alpenrepublik"], 'it': ["Austria", "🇦🇹", "Austria alpina"], diff: 2 },
+            "Switzerland": { 'fr': ["Suisse", "🇨🇭", "Au cœur des Alpes"], 'en': ["Switzerland", "🇨🇭", "Heart of the Alps"], 'es': ["Suiza", "🇨🇭", "Corazón de los Alpes"], 'de': ["Schweiz", "🇨🇭", "Im Herzen der Alpen"], 'it': ["Svizzera", "🇨🇭", "Nel cuore delle Alpi"], diff: 2 },
+            "Czechia": { 'fr': ["Tchéquie", "🇨🇿", "Bohême et Moravie"], 'en': ["Czechia", "🇨🇿", "Bohemia and Moravia"], 'es': ["Chequia", "🇨🇿", "Bohemia y Moravia"], 'de': ["Tschechien", "🇨🇿", "Böhmen und Mähren"], 'it': ["Repubblica Ceca", "🇨🇿", "Boemia e Moravia"], diff: 2 },
+            "South Korea": { 'fr': ["Corée du Sud", "🇰🇷", "Péninsule coréenne"], 'en': ["South Korea", "🇰🇷", "Korean Peninsula"], 'es': ["Corea del Sur", "🇰🇷", "Península de Corea"], 'de': ["Südkorea", "🇰🇷", "Koreanische Halbinsel"], 'it': ["Corea del Sud", "🇰🇷", "Penisola coreana"], diff: 2 },
+            "Vietnam": { 'fr': ["Vietnam", "🇻🇳", "Façade de l'Asie du Sud-Est"], 'en': ["Vietnam", "🇻🇳", "Southeast Asian coastline"], 'es': ["Vietnam", "🇻🇳", "Costa del Sudeste Asiático"], 'de': ["Vietnam", "🇻🇳", "Südostasiatische Küste"], 'it': ["Vietnam", "🇻🇳", "Costa del Sud-Est asiatico"], diff: 2 },
 
-            "Eswatini": { 'fr': ["Eswatini", "🇸🇿"], 'en': ["Eswatini", "🇸🇿"], 'es': ["Eswatini", "🇸🇿"], 'de': ["Eswatini", "🇸🇿"], 'it': ["Eswatini", "🇸🇿"], diff: 3 },
-            "Lesotho": { 'fr': ["Lesotho", "🇱🇸"], 'en': ["Lesotho", "🇱🇸"], 'es': ["Lesoto", "🇱🇸"], 'de': ["Lesotho", "🇱🇸"], 'it': ["Lesotho", "🇱🇸"], diff: 3 },
-            "Bhutan": { 'fr': ["Bhoutan", "🇧🇹"], 'en': ["Bhutan", "🇧🇹"], 'es': ["Bután", "🇧🇹"], 'de': ["Bhutan", "🇧🇹"], 'it': ["Bhutan", "🇧🇹"], diff: 3 },
-            "Laos": { 'fr': ["Laos", "🇱🇦"], 'en': ["Laos", "🇱🇦"], 'es': ["Laos", "🇱🇦"], 'de': ["Laos", "🇱🇦"], 'it': ["Laos", "🇱🇦"], diff: 3 },
-            "Rwanda": { 'fr': ["Rwanda", "🇷🇼"], 'en': ["Rwanda", "🇷🇼"], 'es': ["Ruanda", "🇷🇼"], 'de': ["Ruanda", "🇷🇼"], 'it': ["Ruanda", "🇷🇼"], diff: 3 },
-            "Burundi": { 'fr': ["Burundi", "🇧🇮"], 'en': ["Burundi", "🇧🇮"], 'es': ["Burundi", "🇧🇮"], 'de': ["Burundi", "🇧🇮"], 'it': ["Burundi", "🇧🇮"], diff: 3 },
-            "Serbia": { 'fr': ["Serbie", "🇷🇸"], 'en': ["Serbia", "🇷🇸"], 'es': ["Serbia", "🇷🇸"], 'de': ["Serbien", "🇷🇸"], 'it': ["Serbia", "🇷🇸"], diff: 3 }
+            "Eswatini": { 'fr': ["Eswatini", "🇸🇿", "Enclavé en Afrique australe"], 'en': ["Eswatini", "🇸🇿", "Landlocked in Southern Africa"], 'es': ["Eswatini", "🇸🇿", "Enclavado en el sur de África"], 'de': ["Eswatini", "🇸🇿", "Eingeschlossen im südlichen Afrika"], 'it': ["Eswatini", "🇸🇿", "Incluso nell'Africa australe"], diff: 3 },
+            "Lesotho": { 'fr': ["Lesotho", "🇱🇸", "Entièrement enclavé dans un seul pays"], 'en': ["Lesotho", "🇱🇸", "Enclaved inside South Africa"], 'es': ["Lesotho", "🇱🇸", "Enclavado en Sudáfrica"], 'de': ["Lesotho", "🇱🇸", "Vollständig von Südafrika umgeben"], 'it': ["Lesotho", "🇱🇸", "Enclavato nel Sudafrica"], diff: 3 },
+            "Bhutan": { 'fr': ["Bhoutan", "🇧🇹", "Dans l'Himalaya"], 'en': ["Bhutan", "🇧🇹", "Himalayan kingdom"], 'es': ["Bután", "🇧🇹", "Reino del Himalaya"], 'de': ["Bhutan", "🇧🇹", "Im Himalaya"], 'it': ["Bhutan", "🇧🇹", "Nel regno dell'Himalaya"], diff: 3 },
+            "Laos": { 'fr': ["Laos", "🇱🇦", "Seul pays enclavé d'Indochine"], 'en': ["Laos", "🇱🇦", "Indochinese landlocked nation"], 'es': ["Laos", "🇱🇦", "Nación de Indochina"], 'de': ["Laos", "🇱🇦", "Binnenstaat in Indochina"], 'it': ["Laos", "🇱🇦", "Nazione dell'Indocina"], diff: 3 },
+            "Rwanda": { 'fr': ["Rwanda", "🇷🇼", "Pays des mille collines en Afrique de l'Est"], 'en': ["Rwanda", "🇷🇼", "Land of a thousand hills"], 'es': ["Ruanda", "🇷🇼", "País de las mil colinas"], 'de': ["Ruanda", "🇷🇼", "Land der tausend Hügel"], 'it': ["Ruanda", "🇷🇼", "Paese delle mille colline"], diff: 3 },
+            "Burundi": { 'fr': ["Burundi", "🇧🇮", "Proche des Grands Lacs africains"], 'en': ["Burundi", "🇧🇮", "Near African Great Lakes"], 'es': ["Burundi", "🇧🇮", "Cerca de los Grandes Lagos"], 'de': ["Burundi", "🇧🇮", "Nahe den großen afrikanischen Seen"], 'it': ["Burundi", "🇧🇮", "Vicino ai Grandi Laghi africani"], diff: 3 },
+            "Serbia": { 'fr': ["Serbie", "🇷🇸", "Balkans centraux"], 'en': ["Serbia", "🇷🇸", "Central Balkans"], 'es': ["Serbia", "🇷🇸", "Balcanes centrales"], 'de': ["Serbien", "🇷🇸", "Zentralbalkan"], 'it': ["Serbia", "🇷🇸", "Balcani centrali"], diff: 3 }
         };
 
         function getLocalizedCountryInfo(feature) {
@@ -285,7 +327,7 @@
             if (countryDataMap[englishName] && countryDataMap[englishName][currentLang]) {
                 return countryDataMap[englishName][currentLang];
             }
-            return [englishName, "🌐"];
+            return [englishName, "🌐", "Observe bien la topographie voisine."];
         }
 
         const i18n = {
@@ -371,6 +413,7 @@
                 const info = getLocalizedCountryInfo(currentCountryFull);
                 document.getElementById('target-flag').innerText = info[1];
                 document.getElementById('target-name').innerText = info[0];
+                document.getElementById('astuce-text').innerText = info[2];
             }
 
             const select = document.getElementById('region-select');
@@ -384,12 +427,12 @@
             select.value = currentVal || 'all';
         }
 
-        // --- MOTEUR DE JEU (GESTION DES 2 DOIGTS POUR PANNANT SUR MOBILE) ---
+        // --- MOTEUR DE JEU ---
         const map = L.map('map-container', { 
             doubleClickZoom: false, 
             zoomControl: false, 
-            dragging: !L.Browser.mobile, // Désactive le déplacement à 1 doigt sur mobile pour laisser place au dessin !
-            touchZoom: true,              // Permet de zoomer/déplacer à 2 doigts
+            dragging: true, // Fix corrigé : la souris peut glisser sans conflit de dessin
+            touchZoom: true,              
             keyboard: false 
         }).setView([20, 0], 3);
 
@@ -423,7 +466,6 @@
             document.getElementById('menu-buttons').style.display = "flex";
         });
 
-        // Gestion Tactique et Souris combinées pour le dessin mobile / desktop
         const mapDiv = document.getElementById('map-container');
 
         function startStroke(clientX, clientY) {
@@ -452,22 +494,26 @@
             currentPath = []; currentPolyline = null;
         }
 
-        // Événements Souris
+        // Événements Souris (Click gauche pour dessiner, clic droit/milieu ou drag natif pour bouger la carte)
         mapDiv.addEventListener('mousedown', (e) => {
-            if (e.button === 0) startStroke(e.clientX, e.clientY);
+            if (e.button === 0) {
+                // Si on appuie sur Maj, on laisse la carte bouger, sinon on dessine
+                if (!e.shiftKey) {
+                    startStroke(e.clientX, e.clientY);
+                }
+            }
         });
         mapDiv.addEventListener('mousemove', (e) => {
             moveStroke(e.clientX, e.clientY);
         });
         window.addEventListener('mouseup', endStroke);
 
-        // Événements Tactiles (1 doigt = dessin, 2 doigts = géré nativement par Leaflet pour le pan/zoom)
+        // Événements Tactiles (1 doigt dessine, 2 doigts déplacent la carte)
         mapDiv.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
                 startStroke(touch.clientX, touch.clientY);
             } else if (e.touches.length >= 2) {
-                // Si l'utilisateur pose 2 doigts, on annule le trait en cours pour laisser place au mouvement de carte
                 isDrawing = false;
                 if (currentPolyline) { drawnLayers.removeLayer(currentPolyline); }
                 currentPath = []; currentPolyline = null;
@@ -589,7 +635,14 @@
             activeMode = mode; round = 1; totalScore = 0; comboCount = 0; currentMultiplier = 1.0;
             document.getElementById('score-val').innerText = "0";
             document.getElementById('timer-container').style.display = mode === 'zen' ? 'none' : 'flex';
+            document.getElementById('glossy-gauge').style.display = 'block';
+            updateGlossyGauge(0);
             startRound();
+        }
+
+        function updateGlossyGauge(pct) {
+            const fill = document.getElementById('glossy-gauge-fill');
+            fill.style.height = `${Math.min(100, Math.max(0, pct))}%`;
         }
 
         function startRound() {
@@ -603,6 +656,7 @@
             document.getElementById('score-ui').style.display = "flex"; 
             document.getElementById('actions-ui').style.display = "flex";
             document.getElementById('hints-panel').style.display = "flex"; 
+            document.getElementById('astuce-panel').style.display = "block";
             [1,2,3].forEach(i => document.getElementById(`hint-${i}`).disabled = false);
 
             currentCountryFull = gameSequence[round - 1];
@@ -634,6 +688,7 @@
             const info = getLocalizedCountryInfo(currentCountryFull);
             document.getElementById('target-flag').innerText = info[1];
             document.getElementById('target-name').innerText = info[0];
+            document.getElementById('astuce-text').innerText = info[2];
             document.getElementById('round-val').innerText = `${round}/5`;
             
             gameActive = true; 
@@ -644,6 +699,7 @@
             clearInterval(timerInterval); gameActive = false;
             document.getElementById('actions-ui').style.display = "none";
             document.getElementById('hints-panel').style.display = "none";
+            document.getElementById('astuce-panel').style.display = "none";
 
             if (userPaths.length === 0) userPaths = [[map.getCenter(), map.getCenter()]]; 
             
@@ -704,6 +760,7 @@
             playSfxScore();
 
             document.getElementById('score-val').innerText = totalScore.toLocaleString();
+            updateGlossyGauge((round / 5) * 100);
 
             targetLayer = L.geoJSON(currentLandBorders, { style: { color: '#10B981', weight: 5, dashArray: '8, 10' } }).addTo(map);
 
@@ -723,6 +780,7 @@
 
         function endGame() {
             document.getElementById('game-ui').style.display = "none"; document.getElementById('score-ui').style.display = "none";
+            document.getElementById('glossy-gauge').style.display = 'none';
             document.getElementById('dopamine-popup').classList.remove('active');
             setTimeout(() => document.getElementById('dopamine-popup').style.display = "none", 300);
             

@@ -33,7 +33,6 @@
             border-radius: 16px; color: white; z-index: 10;
         }
 
-        /* Top Bar Desktop */
         .top-bar { position: absolute; top: 20px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 20px; padding: 10px 25px; }
         .target-country { font-size: 1.6rem; font-weight: 900; letter-spacing: 1px; text-transform: uppercase; display: flex; align-items: center; gap: 10px; white-space: nowrap; }
         .target-subtitle { font-size: 0.75rem; color: var(--primary); text-transform: uppercase; font-weight: 800; letter-spacing: 1px; margin-top: -3px; }
@@ -106,7 +105,6 @@
         .lang-btn { background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 4px 10px; border-radius: 15px; cursor: pointer; font-size: 0.85rem; }
         .lang-btn.active { background: var(--primary); color: #000; border-color: var(--primary); }
 
-        /* RESPONSIVE MOBILE FIXES */
         @media (max-width: 768px) {
             .score-panel { top: 10px; left: 10px; padding: 8px 12px; gap: 10px; }
             .score-value { font-size: 1.1rem; }
@@ -186,7 +184,7 @@
         </div>
         
         <div class="menu-buttons" id="menu-buttons" style="display: none;">
-            <button class="btn btn-mode-chrono" id="btn-chrono" onclick="startGame('chrono')">⏱️ Chrono</button>
+            <button class="btn btn-mode-chrono" id="btn-chrono" onclick="startGame('chrono')">⏱️ Chrono (3-1-1)</button>
             <button class="btn btn-mode-zen" id="btn-zen" onclick="startGame('zen')">🧘 Zen</button>
         </div>
     </div>
@@ -386,7 +384,15 @@
             select.value = currentVal || 'all';
         }
 
-        const map = L.map('map-container', { doubleClickZoom: false, zoomControl: false, dragging: true, keyboard: false }).setView([20, 0], 3);
+        // --- MOTEUR DE JEU (GESTION DES 2 DOIGTS POUR PANNANT SUR MOBILE) ---
+        const map = L.map('map-container', { 
+            doubleClickZoom: false, 
+            zoomControl: false, 
+            dragging: !L.Browser.mobile, // Désactive le déplacement à 1 doigt sur mobile pour laisser place au dessin !
+            touchZoom: true,              // Permet de zoomer/déplacer à 2 doigts
+            keyboard: false 
+        }).setView([20, 0], 3);
+
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 12 }).addTo(map);
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', { maxZoom: 12, opacity: 0.6 }).addTo(map);
 
@@ -455,16 +461,21 @@
         });
         window.addEventListener('mouseup', endStroke);
 
-        // Événements Tactiles (Smartphones / iPhone)
+        // Événements Tactiles (1 doigt = dessin, 2 doigts = géré nativement par Leaflet pour le pan/zoom)
         mapDiv.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
                 startStroke(touch.clientX, touch.clientY);
+            } else if (e.touches.length >= 2) {
+                // Si l'utilisateur pose 2 doigts, on annule le trait en cours pour laisser place au mouvement de carte
+                isDrawing = false;
+                if (currentPolyline) { drawnLayers.removeLayer(currentPolyline); }
+                currentPath = []; currentPolyline = null;
             }
         }, {passive: true});
 
         mapDiv.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 1) {
+            if (e.touches.length === 1 && isDrawing) {
                 const touch = e.touches[0];
                 moveStroke(touch.clientX, touch.clientY);
             }

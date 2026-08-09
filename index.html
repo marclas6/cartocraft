@@ -84,13 +84,20 @@
             width: 100%; height: 0%; background: linear-gradient(180deg, #10B981, #FACC15, #EF4444);
             border-radius: 8px; transition: height 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             box-shadow: inset 0 2px 5px rgba(255,255,255,0.5), 0 0 15px rgba(250, 204, 21, 0.6);
-            position: relative; margin-top: auto; /* Aligne le remplissage par le bas */
+            position: relative; margin-top: auto;
         }
         .glossy-gauge-fill::after {
             content: ''; position: absolute; top: 0; left: 0; right: 0; height: 50%;
             background: linear-gradient(180deg, rgba(255,255,255,0.4), transparent);
             border-radius: 8px 8px 0 0; pointer-events: none;
         }
+
+        /* Lecteur Musique Discret */
+        .music-panel {
+            position: absolute; bottom: 25px; left: 20px; z-index: 10;
+            display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 0.8rem;
+        }
+        .music-btn { background: var(--primary); border: none; border-radius: 20px; padding: 6px 12px; font-weight: 800; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.75rem; }
 
         #hint-notification { position: absolute; top: 200px; left: 50%; transform: translateX(-50%); padding: 6px 15px; border-radius: 20px; font-weight: 600; font-size: 0.8rem; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 20;}
 
@@ -143,6 +150,7 @@
             .hints-panel { top: 172px; left: 10px; transform: none; padding: 5px 10px; gap: 5px; }
             .hint-btn { padding: 4px 8px; font-size: 0.65rem; }
             .glossy-gauge-container { top: 10px; right: 10px; height: 150px; width: 18px; }
+            .music-panel { bottom: 75px; left: 10px; padding: 5px 10px; font-size: 0.7rem; }
             .bottom-actions { bottom: 15px; width: 95%; gap: 6px; }
             .btn { padding: 10px 10px; font-size: 0.8rem; }
             .overlay-title { font-size: 2.5rem; }
@@ -153,6 +161,17 @@
 <body>
 
     <div id="map-container"></div>
+
+    <!-- Piste Audio de fond (Tighten the grip)[span_1](start_span)[span_1](end_span) -->
+    <audio id="bg-music" loop>
+        <!-- Tu pourras remplacer la source par ton fichier audio hébergé ou converti si besoin -->
+        <source src="" type="audio/mpeg">
+    </audio>
+
+    <div class="glass-panel music-panel" id="music-ui" style="display: none;">
+        <span>🎵 Tighten the Grip</span>
+        <button class="music-btn" id="music-toggle" onclick="toggleMusic()">Play</button>
+    </div>
 
     <div class="glass-panel top-bar" id="game-ui" style="display: none;">
         <div>
@@ -165,6 +184,7 @@
         </div>
     </div>
 
+    <!-- Encart Astuce -->
     <div class="astuce-panel" id="astuce-panel" style="display: none;">
         Astuce :
     </div>
@@ -184,6 +204,7 @@
         </div>
     </div>
 
+    <!-- Jauge Glossy Dopaminergique Droite -->
     <div class="glossy-gauge-container" id="glossy-gauge">
         <div class="glossy-gauge-fill" id="glossy-gauge-fill" style="height: 0%;"></div>
     </div>
@@ -233,6 +254,18 @@
         function initAudio() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === 'suspended') audioCtx.resume();
+        }
+
+        function toggleMusic() {
+            const music = document.getElementById('bg-music');
+            const btn = document.getElementById('music-toggle');
+            if (music.paused) {
+                music.play().catch(e => console.log("Lecture audio bloquée par le navigateur", e));
+                btn.innerText = "Pause";
+            } else {
+                music.pause();
+                btn.innerText = "Play";
+            }
         }
 
         function playSfxClick() {
@@ -643,6 +676,7 @@
             document.getElementById('score-val').innerText = "0";
             document.getElementById('timer-container').style.display = mode === 'zen' ? 'none' : 'flex';
             document.getElementById('glossy-gauge').style.display = 'block';
+            document.getElementById('music-ui').style.display = 'flex';
             updateGlossyGauge(20); // Manche 1 = 20%
             startRound();
         }
@@ -788,6 +822,7 @@
             document.getElementById('game-ui').style.display = "none"; document.getElementById('score-ui').style.display = "none";
             document.getElementById('glossy-gauge').style.display = 'none';
             document.getElementById('astuce-panel').style.display = 'none';
+            document.getElementById('music-ui').style.display = 'none';
             document.getElementById('dopamine-popup').classList.remove('active');
             setTimeout(() => document.getElementById('dopamine-popup').style.display = "none", 300);
             

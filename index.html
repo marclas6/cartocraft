@@ -162,14 +162,13 @@
 
     <div id="map-container"></div>
 
-    <!-- Piste Audio de fond (Tighten the grip) branchée sur le fichier présent dans le dépôt -->
     <audio id="bg-music" loop>
         <source src="Tighten_the_Grip.mp3" type="audio/mpeg">
     </audio>
 
     <div class="glass-panel music-panel" id="music-ui" style="display: none;">
         <span>🎵 Tighten the Grip</span>
-        <button class="music-btn" id="music-toggle" onclick="toggleMusic()">Play</button>
+        <button class="music-btn" id="music-toggle" onclick="toggleMusic()">Pause</button>
     </div>
 
     <div class="glass-panel top-bar" id="game-ui" style="display: none;">
@@ -259,7 +258,7 @@
             const music = document.getElementById('bg-music');
             const btn = document.getElementById('music-toggle');
             if (music.paused) {
-                music.play().catch(e => console.log("Lecture audio bloquée par le navigateur", e));
+                music.play().catch(e => console.log("Lecture audio bloquée", e));
                 btn.innerText = "Pause";
             } else {
                 music.pause();
@@ -465,7 +464,9 @@
         }).setView([20, 0], 3);
 
         L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { maxZoom: 12 }).addTo(map);
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', { maxZoom: 12, opacity: 0.6 }).addTo(map);
+        
+        // Couche des noms de villes et transport (dynamique selon le mode)
+        const transportLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', { maxZoom: 12, opacity: 0.9 });
 
         let globalTopology, worldFeatures = [], currentCountryFull = null, currentLandBorders = null;
         let worldGeometries = [], countryNeighborsMap = [], actualNeighbors = [];
@@ -503,7 +504,6 @@
             isDrawing = true;
             playSfxClick();
             
-            // Désactive immédiatement le déplacement de la carte par Leaflet pour tracer sans riper
             map.dragging.disable();
 
             const latlng = map.containerPointToLatLng([clientX, clientY]);
@@ -523,7 +523,6 @@
             isDrawing = false;
             playSfxRelease();
             
-            // Réactive le déplacement de la carte dès qu'on lâche la souris ou le doigt
             map.dragging.enable();
 
             if (currentPath.length > 1) { 
@@ -535,7 +534,6 @@
             currentPolyline = null;
         }
 
-        // Événements Souris PC (Clic gauche = Dessin pur sans bouger la carte)
         mapDiv.addEventListener('mousedown', (e) => {
             if (e.button === 0) {
                 startStroke(e.clientX, e.clientY);
@@ -546,7 +544,6 @@
         });
         window.addEventListener('mouseup', endStroke);
 
-        // Tactile mobile (1 doigt = dessin, 2 doigts = bouger/zoomer la carte)
         mapDiv.addEventListener('touchstart', (e) => {
             if (e.touches.length === 1) {
                 const touch = e.touches[0];
@@ -668,6 +665,21 @@
 
         function startGame(mode) {
             initAudio();
+            
+            const music = document.getElementById('bg-music');
+            music.play().then(() => {
+                document.getElementById('music-toggle').innerText = "Pause";
+            }).catch(e => {
+                console.log("Autoplay bloqué", e);
+            });
+
+            // Activation automatique des noms de villes/transport en mode Zen
+            if (mode === 'zen') {
+                if (!map.hasLayer(transportLayer)) transportLayer.addTo(map);
+            } else {
+                if (map.hasLayer(transportLayer)) map.removeLayer(transportLayer);
+            }
+
             const regionSelect = document.getElementById('region-select');
             buildGameSequence(regionSelect ? regionSelect.value : 'all');
             
@@ -676,7 +688,7 @@
             document.getElementById('timer-container').style.display = mode === 'zen' ? 'none' : 'flex';
             document.getElementById('glossy-gauge').style.display = 'block';
             document.getElementById('music-ui').style.display = 'flex';
-            updateGlossyGauge(20); // Manche 1 = 20%
+            updateGlossyGauge(20);
             startRound();
         }
 
@@ -752,11 +764,12 @@
             const transform = d3.geoTransform({point: function(x, y) { const p = map.latLngToContainerPoint(new L.LatLng(y, x)); this.stream.point(p.x, p.y); }});
             const path = d3.geoPath().projection(transform).context(ctx);
 
-            ctx.strokeStyle = 'rgb(255, 0, 0)'; ctx.lineWidth = 18; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+            // Ajustement de la précision pour les pinailleurs de géo (traits plus fins et précis)
+            ctx.strokeStyle = 'rgb(255, 0, 0)'; ctx.lineWidth = 12; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
             ctx.beginPath(); path(currentLandBorders); ctx.stroke();
             
             ctx.globalCompositeOperation = 'lighten'; 
-            ctx.strokeStyle = 'rgb(0, 0, 255)'; ctx.lineWidth = 18; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+            ctx.strokeStyle = 'rgb(0, 0, 255)'; ctx.lineWidth = 12; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
             ctx.beginPath();
             userPaths.forEach(pts => {
                 const firstPt = map.latLngToContainerPoint(pts[0]); ctx.moveTo(firstPt.x, firstPt.y);
@@ -776,8 +789,8 @@
             let recall = targetPixels === 0 ? 0 : intersection / targetPixels;
             let f1 = (precision + recall === 0) ? 0 : 2 * (precision * recall) / (precision + recall);
 
-            let scorePct = Math.min(100, (f1 * 100) * (activeMode === 'chrono' ? 1.2 : 1.4));
-            if (scorePct >= 90) scorePct = 100;
+            // Formule adaptée pour exiger un minimum de précision sans décourager
+            let scorePct = Math.min(100, (f1 * 110)); 
 
             let basePoints = Math.round((scorePct / 100) * maxPointsRound);
             
@@ -799,9 +812,10 @@
             playSfxScore();
 
             document.getElementById('score-val').innerText = totalScore.toLocaleString();
-            updateGlossyGauge((round / 5) * 100); // La jauge s'élève vers le haut à chaque manche
+            updateGlossyGauge((round / 5) * 100);
 
-            targetLayer = L.geoJSON(currentLandBorders, { style: { color: '#10B981', weight: 5, dashArray: '8, 10' } }).addTo(map);
+            // Affichage de la vraie frontière en vert pointillé pour comparer
+            targetLayer = L.geoJSON(currentLandBorders, { style: { color: '#10B981', weight: 4, dashArray: '6, 6' } }).addTo(map);
 
             const t = i18n[currentLang];
             let msg = scorePct >= 95 ? t.msgPerfect : scorePct > 70 ? t.msgGood : scorePct > 40 ? t.msgOkay : t.msgBad;
